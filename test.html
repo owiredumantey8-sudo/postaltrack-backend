@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Test</title>
+</head>
+<body>
+
+  <h2>Register User</h2>
+  <input id="name" placeholder="Full Name" /><br><br>
+  <input id="email" placeholder="Email" /><br><br>
+  <input id="phone" placeholder="Phone" /><br><br>
+  <input id="password" placeholder="Password" type="password" /><br><br>
+  <button onclick="register()">Register</button>
+  <p id="reg-result"></p>
+
+  <hr>
+
+  <h2>Login</h2>
+  <input id="login-email" placeholder="Email" /><br><br>
+  <input id="login-password" placeholder="Password" type="password" /><br><br>
+  <button onclick="login()">Login</button>
+  <p id="login-result"></p>
+
+  <hr>
+
+  <h2>Book a Parcel</h2>
+  <input id="sender-id" placeholder="Sender ID (user_id)" /><br><br>
+  <input id="recipient-name" placeholder="Recipient Name" /><br><br>
+  <input id="recipient-address" placeholder="Recipient Address" /><br><br>
+  <input id="recipient-phone" placeholder="Recipient Phone" /><br><br>
+  <input id="weight" placeholder="Weight (kg)" /><br><br>
+  <input id="value" placeholder="Declared Value" /><br><br>
+  <button onclick="bookParcel()">Book Parcel</button>
+  <p id="book-result"></p>
+
+  <hr>
+
+  <h2>Track a Parcel</h2>
+  <input id="tracking-number" placeholder="Tracking Number" /><br><br>
+  <button onclick="trackParcel()">Track Parcel</button>
+  <p id="track-result"></p>
+
+  <script>
+    async function register() {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          phone_number: document.getElementById('phone').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json();
+      document.getElementById('reg-result').innerText = JSON.stringify(data);
+    }
+
+    async function login() {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('login-email').value,
+          password: document.getElementById('login-password').value
+        })
+      });
+      const data = await res.json();
+      document.getElementById('login-result').innerText = JSON.stringify(data);
+    }
+
+    async function bookParcel() {
+      const res = await fetch('http://localhost:5000/api/parcels/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender_id: document.getElementById('sender-id').value,
+          recipient_name: document.getElementById('recipient-name').value,
+          recipient_address: document.getElementById('recipient-address').value,
+          recipient_phone: document.getElementById('recipient-phone').value,
+          weight_kg: document.getElementById('weight').value,
+          declared_value: document.getElementById('value').value
+        })
+      });
+      const data = await res.json();
+      document.getElementById('book-result').innerText = JSON.stringify(data);
+    }
+
+    async function trackParcel() {
+      const res = await fetch('http://localhost:5000/api/parcels/track/' + document.getElementById('tracking-number').value);
+      const data = await res.json();
+      document.getElementById('track-result').innerText = JSON.stringify(data);
+    }
+  </script>
+  <hr>
+<h2>Update Parcel Status (Courier Agent)</h2>
+<input id="update-tracking" placeholder="Tracking Number" /><br><br>
+<select id="update-status">
+  <option value="dispatched">Dispatched</option>
+  <option value="in_transit">In Transit</option>
+  <option value="out_for_delivery">Out for Delivery</option>
+  <option value="delivered">Delivered</option>
+</select><br><br>
+<input id="update-location" placeholder="Current Location" /><br><br>
+<input id="update-description" placeholder="Description" /><br><br>
+<button onclick="updateStatus()">Update Status</button>
+<p id="update-result"></p>
+
+<script>
+async function updateStatus() {
+  const res = await fetch('http://localhost:5000/api/parcels/update-status/' + document.getElementById('update-tracking').value, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      status: document.getElementById('update-status').value,
+      location: document.getElementById('update-location').value,
+      description: document.getElementById('update-description').value
+    })
+  });
+  const data = await res.json();
+  document.getElementById('update-result').innerText = JSON.stringify(data);
+}
+</script>
+<hr>
+<h2>Send SMS Notification</h2>
+<input id="sms-to" placeholder="Phone Number (e.g. +233244000000)" /><br><br>
+<input id="sms-message" placeholder="Message" /><br><br>
+<button onclick="sendSMS()">Send SMS</button>
+<p id="sms-result"></p>
+
+<hr>
+<h2>Send Email Notification</h2>
+<input id="email-to" placeholder="Email Address" /><br><br>
+<input id="email-subject" placeholder="Subject" /><br><br>
+<input id="email-text" placeholder="Message" /><br><br>
+<button onclick="sendEmail()">Send Email</button>
+<p id="email-result"></p>
+
+<script>
+async function sendSMS() {
+  const res = await fetch('http://localhost:5000/api/notifications/send-sms', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: document.getElementById('sms-to').value,
+      message: document.getElementById('sms-message').value
+    })
+  });
+  const data = await res.json();
+  document.getElementById('sms-result').innerText = JSON.stringify(data);
+}
+
+async function sendEmail() {
+  const res = await fetch('http://localhost:5000/api/notifications/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: document.getElementById('email-to').value,
+      subject: document.getElementById('email-subject').value,
+      text: document.getElementById('email-text').value
+    })
+  });
+  const data = await res.json();
+  document.getElementById('email-result').innerText = JSON.stringify(data);
+}
+</script>
+</body>
+</html>
