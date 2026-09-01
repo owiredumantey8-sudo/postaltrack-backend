@@ -1,4 +1,3 @@
-const settingsRoutes = require('./routes/settings');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -11,12 +10,15 @@ const parcelRoutes = require('./routes/parcels');
 const notificationRoutes = require('./routes/notifications');
 const agentsRouter = require('./routes/agents');
 const profileRouter = require('./routes/profile');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 
+// Whitelisted domains allowed to communicate with the backend
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'https://postaltrack-admin-cued.vercel.app'
+  'https://vercel.app',
+  'https://vercel.app'
 ];
 
 app.use(cors({
