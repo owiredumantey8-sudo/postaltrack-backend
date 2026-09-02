@@ -104,12 +104,12 @@ router.post('/book', (req, res) => {
   const sql = `
     INSERT INTO parcels
       (sender_id, tracking_number, recipient_name, recipient_phone,
-       destination_address, recipient_email, weight_kg, declared_value, current_status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'booked')`;
+       destination_address, recipient_address, recipient_email, weight_kg, declared_value, current_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'booked')`;
 
   db.query(sql,
     [sender_id, trackingNumber, recipient_name, recipient_phone,
-     deliveryAddress, recipient_email, weight_kg || 0, declared_value || 0],
+     deliveryAddress, deliveryAddress, recipient_email, weight_kg || 0, declared_value || 0],
     (err) => {
       if (err) {
         console.error('Book parcel error:', err.message);
