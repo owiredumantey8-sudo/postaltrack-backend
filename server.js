@@ -19,7 +19,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://postaltrack-agent.vercel.app',
   'https://postaltrack-admin.vercel.app',
-  'https://postaltrack-customer.vercel.app'
+  'https://postaltrack-frontend.vercel.app'
 ];
 
 app.use(cors({
