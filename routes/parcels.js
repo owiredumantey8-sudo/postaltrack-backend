@@ -3,32 +3,39 @@ const router = express.Router();
 const db = require('../db');
 const nodemailer = require('nodemailer');
 
-/* ── Email transporter ── */
+/* ── Email transporter (IPv4 forced for Render) ── */
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: 'owiredumantey8@gmail.com',
-    pass: 'yklmepxcettjvhnf'
-  }
+    user: process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : 'owiredumantey8@gmail.com',
+    pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : 'yklmepxcettjvhnf'
+  },
+  family: 4 // Forces IPv4 connection to prevent ENETUNREACH timeouts on Render
 });
 
-// emailsSent tracks tracking numbers already emailed — prevents double-sends if route fires twice
+// emailsSent tracks tracking numbers already emailed — prevents double-sends
 const emailsSent = new Set();
 
 const sendEmail = async (to, subject, html) => {
   try {
     await transporter.sendMail({
       from: '"PostalTrack 📦" <owiredumantey8@gmail.com>',
-      to, subject, html,
+      to, 
+      subject, 
+      html,
       text: html.replace(/<[^>]*>/g, '')
     });
-    console.log(`✉️  Email sent to ${to}`);
+    console.log(`✉️  Email sent successfully to ${to}`);
   } catch (err) {
     console.error(`❌ Email failed:`, err.message);
   }
 };
 
 /* ── Email Templates ── */
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim() : 'https://postaltrack-frontend.vercel.app';
+
 const bookingConfirmationHTML = (senderName, trackingNumber, recipientName, address) => `
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f4f4f4;padding:20px;">
   <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
@@ -51,7 +58,7 @@ const bookingConfirmationHTML = (senderName, trackingNumber, recipientName, addr
               <td style="text-align:right;"><span style="background:#fef9c3;color:#a16207;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">Booked</span></td></tr>
         </table>
       </div>
-      <p style="color:#6b7280;font-size:13px;">Track your parcel anytime using the tracking number above at <strong>localhost:3000/track/${trackingNumber}</strong></p>
+      <p style="color:#6b7280;font-size:13px;">Track your parcel anytime using the tracking number above at <strong>${frontendUrl}/track/${trackingNumber}</strong></p>
       <p style="color:#374151;font-size:14px;margin-top:24px;">Thank you for using <strong>PostalTrack</strong> 🚀</p>
     </div>
     <div style="background:#f8fafc;padding:16px 32px;text-align:center;">
@@ -75,7 +82,7 @@ const recipientNotificationHTML = (recipientName, trackingNumber, senderName, ad
         <p style="color:#1d4ed8;font-size:22px;font-weight:800;font-family:monospace;margin:0;">${trackingNumber}</p>
         <p style="color:#374151;font-size:13px;margin:10px 0 0;">📍 Delivery to: ${address}</p>
       </div>
-      <p style="color:#6b7280;font-size:13px;">Use this tracking number to follow your parcel at <strong>localhost:3000/track/${trackingNumber}</strong></p>
+      <p style="color:#6b7280;font-size:13px;">Use this tracking number to follow your parcel at <strong>${frontendUrl}/track/${trackingNumber}</strong></p>
       <p style="color:#374151;font-size:14px;margin-top:24px;">PostalTrack Team 🚚</p>
     </div>
     <div style="background:#f8fafc;padding:16px 32px;text-align:center;">
@@ -91,9 +98,7 @@ router.post('/book', (req, res) => {
     destination_address, recipient_email, weight_kg, declared_value
   } = req.body;
 
-  // Use destination_address OR recipient_address — whichever frontend sends
   const deliveryAddress = destination_address || req.body.recipient_address || '';
-
   const trackingNumber = 'TRK' + Math.floor(Math.random() * 1000000000000);
 
   const sql = `
@@ -108,7 +113,6 @@ router.post('/book', (req, res) => {
     (err) => {
       if (err) {
         console.error('Book parcel error:', err.message);
-        // Try alternate column name if first fails
         const sql2 = `
           INSERT INTO parcels
             (sender_id, tracking_number, recipient_name, recipient_phone,
@@ -129,7 +133,6 @@ router.post('/book', (req, res) => {
         return;
       }
 
-      // Success — respond immediately, then send emails
       res.json({ message: 'Parcel booked successfully', tracking_number: trackingNumber });
       sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_email, deliveryAddress);
     }
@@ -138,13 +141,11 @@ router.post('/book', (req, res) => {
 
 /* ── Sends exactly 1 email to sender + 1 to recipient ── */
 function sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_email, deliveryAddress) {
-  // Guard: never send twice for same tracking number (prevents double-click duplicates)
   if (emailsSent.has(trackingNumber)) {
     console.log(`⚠️  Emails already sent for ${trackingNumber} — skipping`);
     return;
   }
   emailsSent.add(trackingNumber);
-  // Clean up after 10 minutes to avoid memory growth
   setTimeout(() => emailsSent.delete(trackingNumber), 10 * 60 * 1000);
 
   db.query('SELECT email, full_name FROM users WHERE user_id = ?', [sender_id], (err, userRes) => {
@@ -153,7 +154,6 @@ function sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_
     const senderName  = userRes?.[0]?.full_name || 'Customer';
     const senderEmail = userRes?.[0]?.email;
 
-    // Email 1 — Booking confirmation → SENDER (the logged-in customer)
     if (senderEmail) {
       sendEmail(
         senderEmail,
@@ -162,7 +162,6 @@ function sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_
       );
     }
 
-    // Email 2 — Notification → RECIPIENT (only if different from sender AND email exists)
     if (recipient_email && recipient_email.toLowerCase() !== senderEmail?.toLowerCase()) {
       sendEmail(
         recipient_email,
