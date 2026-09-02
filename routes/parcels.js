@@ -6,8 +6,8 @@ const nodemailer = require('nodemailer');
 /* ── Email transporter (IPv4 forced for Render) ── */
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : 'owiredumantey8@gmail.com',
     pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : 'yklmepxcettjvhnf'
