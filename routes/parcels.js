@@ -104,8 +104,8 @@ router.post('/book', (req, res) => {
   const sql = `
     INSERT INTO parcels
       (sender_id, tracking_number, recipient_name, recipient_phone,
-       destination_address, recipient_email, weight_kg, declared_value, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`;
+       destination_address, recipient_email, weight_kg, declared_value, current_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'booked')`;
 
   db.query(sql,
     [sender_id, trackingNumber, recipient_name, recipient_phone,
@@ -113,24 +113,7 @@ router.post('/book', (req, res) => {
     (err) => {
       if (err) {
         console.error('Book parcel error:', err.message);
-        const sql2 = `
-          INSERT INTO parcels
-            (sender_id, tracking_number, recipient_name, recipient_phone,
-             recipient_address, recipient_email, weight_kg, declared_value, current_status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'booked')`;
-        db.query(sql2,
-          [sender_id, trackingNumber, recipient_name, recipient_phone,
-           deliveryAddress, recipient_email, weight_kg || 0, declared_value || 0],
-          (err2) => {
-            if (err2) {
-              console.error('Book parcel error (retry):', err2.message);
-              return res.status(500).json({ message: 'Database error: ' + err2.message });
-            }
-            res.json({ message: 'Parcel booked successfully', tracking_number: trackingNumber });
-            sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_email, deliveryAddress);
-          }
-        );
-        return;
+        return res.status(500).json({ message: 'Database error: ' + err.message });
       }
 
       res.json({ message: 'Parcel booked successfully', tracking_number: trackingNumber });
