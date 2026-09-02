@@ -12,10 +12,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : 'owiredumantey8@gmail.com',
     pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : 'yklmepxcettjvhnf'
   },
-  family: 4 // Forces IPv4 connection to prevent ENETUNREACH timeouts on Render
+  family: 4
 });
 
-// emailsSent tracks tracking numbers already emailed — prevents double-sends
 const emailsSent = new Set();
 
 const sendEmail = async (to, subject, html) => {
@@ -33,7 +32,6 @@ const sendEmail = async (to, subject, html) => {
   }
 };
 
-/* ── Email Templates ── */
 const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.trim() : 'https://postaltrack-frontend.vercel.app';
 
 const bookingConfirmationHTML = (senderName, trackingNumber, recipientName, address) => `
@@ -61,9 +59,6 @@ const bookingConfirmationHTML = (senderName, trackingNumber, recipientName, addr
       <p style="color:#6b7280;font-size:13px;">Track your parcel anytime using the tracking number above at <strong>${frontendUrl}/track/${trackingNumber}</strong></p>
       <p style="color:#374151;font-size:14px;margin-top:24px;">Thank you for using <strong>PostalTrack</strong> 🚀</p>
     </div>
-    <div style="background:#f8fafc;padding:16px 32px;text-align:center;">
-      <p style="color:#9ca3af;font-size:12px;margin:0;">© ${new Date().getFullYear()} PostalTrack · Ghana</p>
-    </div>
   </div>
 </body></html>`;
 
@@ -82,11 +77,6 @@ const recipientNotificationHTML = (recipientName, trackingNumber, senderName, ad
         <p style="color:#1d4ed8;font-size:22px;font-weight:800;font-family:monospace;margin:0;">${trackingNumber}</p>
         <p style="color:#374151;font-size:13px;margin:10px 0 0;">📍 Delivery to: ${address}</p>
       </div>
-      <p style="color:#6b7280;font-size:13px;">Use this tracking number to follow your parcel at <strong>${frontendUrl}/track/${trackingNumber}</strong></p>
-      <p style="color:#374151;font-size:14px;margin-top:24px;">PostalTrack Team 🚚</p>
-    </div>
-    <div style="background:#f8fafc;padding:16px 32px;text-align:center;">
-      <p style="color:#9ca3af;font-size:12px;margin:0;">© ${new Date().getFullYear()} PostalTrack · Ghana</p>
     </div>
   </div>
 </body></html>`;
@@ -122,136 +112,83 @@ router.post('/book', (req, res) => {
   );
 });
 
-/* ── Sends exactly 1 email to sender + 1 to recipient ── */
 function sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_email, deliveryAddress) {
-  if (emailsSent.has(trackingNumber)) {
-    console.log(`⚠️  Emails already sent for ${trackingNumber} — skipping`);
-    return;
-  }
+  if (emailsSent.has(trackingNumber)) return;
   emailsSent.add(trackingNumber);
   setTimeout(() => emailsSent.delete(trackingNumber), 10 * 60 * 1000);
 
   db.query('SELECT email, full_name FROM users WHERE user_id = ?', [sender_id], (err, userRes) => {
-    if (err) { console.error('User lookup error:', err.message); return; }
-
-    const senderName  = userRes?.[0]?.full_name || 'Customer';
+    if (err) return;
+    const senderName = userRes?.[0]?.full_name || 'Customer';
     const senderEmail = userRes?.[0]?.email;
 
     if (senderEmail) {
-      sendEmail(
-        senderEmail,
-        `✅ Booking Confirmed – ${trackingNumber}`,
-        bookingConfirmationHTML(senderName, trackingNumber, recipient_name, deliveryAddress)
-      );
+      sendEmail(senderEmail, `✅ Booking Confirmed – ${trackingNumber}`, bookingConfirmationHTML(senderName, trackingNumber, recipient_name, deliveryAddress));
     }
-
     if (recipient_email && recipient_email.toLowerCase() !== senderEmail?.toLowerCase()) {
-      sendEmail(
-        recipient_email,
-        `📦 A parcel is on its way to you – ${trackingNumber}`,
-        recipientNotificationHTML(recipient_name, trackingNumber, senderName, deliveryAddress)
-      );
+      sendEmail(recipient_email, `📦 A parcel is on its way to you – ${trackingNumber}`, recipientNotificationHTML(recipient_name, trackingNumber, senderName, deliveryAddress));
     }
   });
 }
 
-/* ========================= GET ALL PARCELS ========================= */
 router.get('/all', (req, res) => {
-  const sql = `SELECT * FROM parcels ORDER BY parcel_id DESC`;
-  db.query(sql, (err, results) => {
+  db.query(`SELECT * FROM parcels ORDER BY parcel_id DESC`, (err, results) => {
     if (err) return res.status(500).json({ message: err.message });
     res.json(results || []);
   });
 });
 
-/* ========================= ASSIGN AGENT ========================= */
 router.put('/assign/:parcelId', (req, res) => {
   const { parcelId } = req.params;
   const { agent_id } = req.body;
-  db.query(
-    `UPDATE parcels SET agent_id = ? WHERE parcel_id = ?`,
-    [agent_id || null, parcelId],
-    (err, result) => {
-      if (err) return res.status(500).json({ message: err.message });
-      if (result.affectedRows === 0) return res.status(404).json({ message: 'Parcel not found' });
-      res.json({ message: agent_id ? 'Agent assigned successfully' : 'Agent unassigned' });
-    }
-  );
+  db.query(`UPDATE parcels SET agent_id = ? WHERE parcel_id = ?`, [agent_id || null, parcelId], (err, result) => {
+    if (err) return res.status(500).json({ message: err.message });
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Parcel not found' });
+    res.json({ message: agent_id ? 'Agent assigned successfully' : 'Agent unassigned' });
+  });
 });
 
-/* ========================= GET PARCELS FOR SPECIFIC AGENT ========================= */
 router.get('/agent/:agentId', (req, res) => {
-  const { agentId } = req.params;
-  db.query(
-    `SELECT * FROM parcels WHERE agent_id = ? ORDER BY parcel_id DESC`,
-    [agentId],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(results || []);
-    }
-  );
+  db.query(`SELECT * FROM parcels WHERE agent_id = ? ORDER BY parcel_id DESC`, [req.params.agentId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results || []);
+  });
 });
 
-/* ========================= GET PARCELS FOR SPECIFIC USER ========================= */
 router.get('/my-parcels/:userId', (req, res) => {
-  const { userId } = req.params;
-  db.query(
-    `SELECT * FROM parcels WHERE sender_id = ? ORDER BY parcel_id DESC`,
-    [userId],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(results || []);
-    }
-  );
+  db.query(`SELECT * FROM parcels WHERE sender_id = ? ORDER BY parcel_id DESC`, [req.params.userId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results || []);
+  });
 });
 
-/* ========================= UPDATE PARCEL STATUS ========================= */
 router.put('/update/:id', (req, res) => {
   const { id } = req.params;
   const { current_status, current_location, description } = req.body;
-
-  db.query(
-    `UPDATE parcels SET current_status = ?, current_location = ?, description = ? WHERE parcel_id = ?`,
-    [current_status, current_location, description, id],
-    (err) => {
+  db.query(`UPDATE parcels SET current_status = ?, current_location = ?, description = ? WHERE parcel_id = ?`,
+    [current_status, current_location, description, id], (err) => {
       if (err) return res.status(500).json({ message: err.message });
-
-      db.query(
-        `INSERT INTO parcel_events (parcel_id, status_code, location, event_description, event_timestamp)
-         VALUES (?, ?, ?, ?, NOW())`,
-        [id, current_status, current_location, description],
-        (err2) => { if (err2) console.error('Event log error:', err2); }
-      );
-
+      db.query(`INSERT INTO parcel_events (parcel_id, status_code, location, event_description, event_timestamp) VALUES (?, ?, ?, ?, NOW())`,
+        [id, current_status, current_location, description], () => {});
       res.json({ message: 'Parcel updated successfully' });
-    }
-  );
+    });
 });
 
-/* ========================= TRACK PARCEL ========================= */
 router.get('/track/:trackingNumber', (req, res) => {
-  const { trackingNumber } = req.params;
-  db.query(`SELECT * FROM parcels WHERE tracking_number = ?`, [trackingNumber], (err, results) => {
+  db.query(`SELECT * FROM parcels WHERE tracking_number = ?`, [req.params.trackingNumber], (err, results) => {
     if (err) return res.status(500).json({ message: err.message });
     if (results.length === 0) return res.status(404).json({ error: 'Parcel not found' });
     res.json(results[0]);
   });
 });
 
-/* ========================= GET PARCEL EVENTS/HISTORY ========================= */
 router.get('/events/:parcelId', (req, res) => {
-  const { parcelId } = req.params;
-  db.query(
-    `SELECT * FROM parcel_events WHERE parcel_id = ? ORDER BY event_timestamp DESC`,
-    [parcelId],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(results || []);
-    }
-  );
+  db.query(`SELECT * FROM parcel_events WHERE parcel_id = ? ORDER BY event_timestamp DESC`, [req.params.parcelId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results || []);
+  });
 });
 
-/* ========================= DELETE PARCEL ========================= */
 router.delete('/delete/:id', (req, res) => {
   const { id } = req.params;
   db.query(`DELETE FROM parcel_events WHERE parcel_id = ?`, [id], () => {
