@@ -17,8 +17,9 @@ const app = express();
 // Whitelisted domains allowed to communicate with the backend
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'https://vercel.app',
-  'https://vercel.app'
+  'https://postaltrack-agent.vercel.app',
+  'https://postaltrack-admin.vercel.app',
+  'https://postaltrack-customer.vercel.app'
 ];
 
 app.use(cors({
