@@ -1,24 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-   const { Resend } = require('resend');    
+const nodemailer = require('nodemailer');
 
-/* ── Email transporter (IPv4 forced for Render) ── */
-const resend = new Resend(process.env.RESEND_API_KEY);
+/* ── Email transporter ── */
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: Number(process.env.SMTP_PORT) === 465, // true for port 465, false for 587/others
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
 
 const emailsSent = new Set();
 
 const sendEmail = async (to, subject, html) => {
   try {
-    await resend.emails.send({
-      from: 'PostalTrack <onboarding@resend.dev>',
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'PostalTrack <no-reply@postaltrack.com>',
       to,
       subject,
       html
     });
-    console.log(`✉️  Email sent successfully to ${to}`);
+    console.log(`Email sent successfully to ${to}`);
   } catch (err) {
-    console.error(`❌ Email failed:`, err.message);
+    console.error(`Email failed:`, err.message);
   }
 };
 
