@@ -8,13 +8,13 @@ const senderPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : 'ykl
 /* ── Email transporter (IPv4 forced for Render) ── */
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
   auth: {
     user: senderEmail,
     pass: senderPass
   },
-  family: 4 // Forces IPv4 connection to prevent ENETUNREACH timeouts on Render
+  family: 4
 });
 
 // Manual email send (used by agent/admin portal)
