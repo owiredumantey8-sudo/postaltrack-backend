@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 
 const senderEmail = process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : 'owiredumantey8@gmail.com';
 const senderPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : 'yklmepxcettjvhnf';
 
-/* ── Email transporter (IPv4 forced for Render) ── */
+/* ── Email transporter (IPv4 forced for Railway) ── */
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
@@ -14,7 +16,7 @@ const transporter = nodemailer.createTransport({
     user: senderEmail,
     pass: senderPass
   },
-  family: 4
+  family: 4 // Forces IPv4 connection to prevent ENETUNREACH timeouts
 });
 
 // Manual email send (used by agent/admin portal)
