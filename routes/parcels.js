@@ -54,7 +54,6 @@ const bookingConfirmationHTML = (senderName, trackingNumber, recipientName, addr
               <td style="text-align:right;"><span style="background:#fef9c3;color:#a16207;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">Booked</span></td></tr>
         </table>
       </div>
-      <p style="color:#6b7280;font-size:13px;">Track your parcel anytime using the tracking number above at <strong>${frontendUrl}/track/${trackingNumber}</strong></p>
       <p style="color:#374151;font-size:14px;margin-top:24px;">Thank you for using <strong>PostalTrack</strong> 🚀</p>
     </div>
   </div>
