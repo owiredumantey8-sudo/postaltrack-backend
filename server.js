@@ -12,10 +12,10 @@ const app = express();
 // Explicitly allow your Vercel frontend and local testing
 const allowedOrigins = [
   'https://postaltrack-agent.vercel.app',
+  'https://postaltrack-admin-cued.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173'
 ];
-
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
