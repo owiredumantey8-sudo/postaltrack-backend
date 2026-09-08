@@ -1,6 +1,6 @@
-
 const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');const express = require('express');
+dns.setDefaultResultOrder('ipv4first');
+const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
@@ -9,7 +9,24 @@ require('./db');
 
 const app = express();
 
-app.use(cors());
+// Explicitly allow your Vercel frontend and local testing
+const allowedOrigins = [
+  'https://postaltrack-agent.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS policy blocked this origin.'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Import routes
