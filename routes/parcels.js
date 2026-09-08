@@ -75,6 +75,14 @@ const recipientNotificationHTML = (recipientName, trackingNumber, senderName, ad
         <p style="color:#1d4ed8;font-size:22px;font-weight:800;font-family:monospace;margin:0;">${trackingNumber}</p>
         <p style="color:#374151;font-size:13px;margin:10px 0 0;">📍 Delivery to: ${address}</p>
       </div>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="${frontendUrl}/track/${trackingNumber}" style="display:inline-block;background:#1d4ed8;color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:800;">
+          📍 Track Your Parcel
+        </a>
+      </div>
+      <p style="color:#6b7280;font-size:12px;text-align:center;margin-top:8px;">
+        Or click here: <a href="${frontendUrl}/track/${trackingNumber}" style="color:#1d4ed8;">${frontendUrl}/track/${trackingNumber}</a>
+      </p>
     </div>
   </div>
 </body></html>`;
