@@ -40,7 +40,7 @@ const welcomeEmailHTML = (agentName, email, password, region) => `
         <table style="width:100%;border-collapse:collapse;">
           <tr>
             <td style="color:#6b7280;font-size:13px;padding:8px 0;font-weight:600;width:40%;">Portal URL</td>
-            <td style="color:#059669;font-size:13px;font-weight:800;"><a href="http://localhost:3001" style="color:#059669;">http://localhost:3001</a></td>
+            <td style="color:#059669;font-size:13px;font-weight:800;"><a href="https://postaltrack-agent.vercel.app" style="color:#059669;">https://postaltrack-agent.vercel.app</a></td>
           </tr>
           <tr style="border-top:1px solid #dcfce7;">
             <td style="color:#6b7280;font-size:13px;padding:8px 0;font-weight:600;">Email</td>
@@ -60,7 +60,7 @@ const welcomeEmailHTML = (agentName, email, password, region) => `
         <p style="color:#92400e;font-size:13px;margin:0;">⚠️ <strong>Keep your password safe.</strong> Contact your admin if you have trouble logging in.</p>
       </div>
       <div style="text-align:center;">
-        <a href="http://localhost:3001" style="display:inline-block;background:#059669;color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:800;">🚚 Go to Agent Portal</a>
+        <a href="https://postaltrack-agent.vercel.app" style="display:inline-block;background:#059669;color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:800;">🚚 Go to Agent Portal</a>
       </div>
     </div>
     <div style="background:#f8fafc;padding:16px 32px;text-align:center;">
