@@ -13,6 +13,7 @@ const app = express();
 const allowedOrigins = [
   'https://postaltrack-agent.vercel.app',
   'https://postaltrack-admin-cued.vercel.app',
+  'https://postaltrack-frontend.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173'
 ];
