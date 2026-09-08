@@ -32,12 +32,26 @@ const resetTokens = {};
 
 /* ========================= REGISTER ========================= */
 router.post('/register', (req, res) => {
-  const { full_name, email, phone_number, password, role } = req.body;
+  const { full_name, email, phone_number, password, role, assigned_region } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
   const sql = `INSERT INTO users (full_name, email, phone_number, password_hash, role) VALUES (?, ?, ?, ?, ?)`;
-  db.query(sql, [full_name, email, phone_number, hashedPassword, role || 'customer'], (err) => {
+  
+  db.query(sql, [full_name, email, phone_number, hashedPassword, role || 'customer'], (err, result) => {
     if (err) return res.status(500).json({ message: err.message });
-    res.status(201).json({ message: 'User registered successfully!' });
+
+    // If registering a courier agent, automatically create their agent profile
+    if (role === 'courier_agent') {
+      const newUserId = result.insertId;
+      const agentSql = `INSERT INTO courier_agents (user_id, agent_name, contact_number, assigned_region, status) VALUES (?, ?, ?, ?, 'active')`;
+      const region = assigned_region || 'Unassigned';
+
+      db.query(agentSql, [newUserId, full_name, phone_number, region], (err2) => {
+        if (err2) return res.status(500).json({ message: err2.message });
+        return res.status(201).json({ message: 'Agent registered and profile linked successfully!' });
+      });
+    } else {
+      res.status(201).json({ message: 'User registered successfully!' });
+    }
   });
 });
 
@@ -52,6 +66,7 @@ router.post('/login', (req, res) => {
     const isMatch = bcrypt.compareSync(password, user.password_hash);
     if (!isMatch) return res.status(401).json({ message: 'Wrong password' });
     const token = jwt.sign({ id: user.user_id, role: user.role }, 'secret123', { expiresIn: '1d' });
+    
     if (user.role === 'courier_agent') {
       const agentSql = 'SELECT agent_id, agent_name FROM courier_agents WHERE user_id = ?';
       db.query(agentSql, [user.user_id], (err2, agentResults) => {
