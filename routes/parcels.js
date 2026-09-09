@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 const nodemailer = require('nodemailer');
 
 /* ── Email transporter ── */
@@ -143,7 +144,7 @@ router.get('/all', (req, res) => {
   });
 });
 
-router.put('/assign/:parcelId', (req, res) => {
+router.put('/assign/:parcelId', verifyToken, requireRole('administrator'), (req, res) => {
   const { parcelId } = req.params;
   const { agent_id } = req.body;
   db.query(`UPDATE parcels SET agent_id = ? WHERE parcel_id = ?`, [agent_id || null, parcelId], (err, result) => {
@@ -167,7 +168,7 @@ router.get('/my-parcels/:userId', (req, res) => {
   });
 });
 
-router.put('/update/:id', (req, res) => {
+router.put('/update/:id', verifyToken, requireRole('administrator', 'courier_agent'), (req, res) => {
   const { id } = req.params;
   const { current_status, current_location, description } = req.body;
   db.query(`UPDATE parcels SET current_status = ?, current_location = ?, description = ? WHERE parcel_id = ?`,
@@ -194,7 +195,7 @@ router.get('/events/:parcelId', (req, res) => {
   });
 });
 
-router.delete('/delete/:id', (req, res) => {
+router.delete('/delete/:id', verifyToken, requireRole('administrator'), (req, res) => {
   const { id } = req.params;
   db.query(`DELETE FROM parcel_events WHERE parcel_id = ?`, [id], () => {
     db.query(`DELETE FROM parcels WHERE parcel_id = ?`, [id], (err2) => {
