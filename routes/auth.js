@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../db');
-const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 const nodemailer = require('nodemailer');
 
 /* ── Email transporter ── */
@@ -161,7 +160,7 @@ router.post('/reset-password', (req, res) => {
 });
 
 /* ========================= GET ALL USERS (Admin) ========================= */
-router.get('/users/all', verifyToken, requireRole('administrator'), (req, res) => {
+router.get('/users/all', (req, res) => {
   const sql = `SELECT user_id, full_name, email, phone_number, role, created_at FROM users ORDER BY created_at DESC`;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ message: err.message });
@@ -170,7 +169,7 @@ router.get('/users/all', verifyToken, requireRole('administrator'), (req, res) =
 });
 
 /* ========================= DELETE USER (Admin) ========================= */
-router.delete('/users/delete/:id', verifyToken, requireRole('administrator'), (req, res) => {
+router.delete('/users/delete/:id', (req, res) => {
   const { id } = req.params;
   db.query(`SELECT parcel_id FROM parcels WHERE sender_id = ?`, [id], (err, parcels) => {
     if (err) return res.status(500).json({ message: err.message });
