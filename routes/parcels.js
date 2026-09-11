@@ -195,7 +195,7 @@ router.get('/events/:parcelId', (req, res) => {
   });
 });
 
-router.delete('/delete/:id', verifyToken, (req, res) => {
+router.delete('/delete/:id', (req, res) => {
   const { id } = req.params;
   db.query(`DELETE FROM parcel_events WHERE parcel_id = ?`, [id], () => {
     db.query(`DELETE FROM parcels WHERE parcel_id = ?`, [id], (err2) => {
