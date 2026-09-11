@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const nodemailer = require('nodemailer');
+const verifyToken = require('../middleware/auth');
 
 /* ── Email transporter ── */
 const transporter = nodemailer.createTransport({
@@ -194,7 +195,7 @@ router.get('/events/:parcelId', (req, res) => {
   });
 });
 
-router.delete('/delete/:id', (req, res) => {
+router.delete('/delete/:id', verifyToken, (req, res) => {
   const { id } = req.params;
   db.query(`DELETE FROM parcel_events WHERE parcel_id = ?`, [id], () => {
     db.query(`DELETE FROM parcels WHERE parcel_id = ?`, [id], (err2) => {
