@@ -137,7 +137,7 @@ function sendBookingEmails(sender_id, trackingNumber, recipient_name, recipient_
   });
 }
 
-router.get('/all', verifyToken, (req, res) => {
+router.get('/all', (req, res) => {
   db.query(`SELECT * FROM parcels ORDER BY parcel_id DESC`, (err, results) => {
     if (err) return res.status(500).json({ message: err.message });
     res.json(results || []);
