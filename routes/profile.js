@@ -25,14 +25,16 @@ router.get('/parcels/:userId', (req, res) => {
    SUBMIT SUPPORT TICKET (UPDATED)
 ========================= */
 router.post('/support', (req, res) => {
-  const { user_id, tracking_number, category, subject, message } = req.body;
+  const { user_id, tracking_number, category, subject, message, images } = req.body;
 
   if (!category || !subject || !message) {
     return res.status(400).json({ message: 'Category, subject, and message are required' });
   }
 
-  const sql = `INSERT INTO support_tickets (user_id, tracking_number, category, subject, message, status) VALUES (?, ?, ?, ?, ?, 'pending')`;
-  db.query(sql, [user_id || null, tracking_number || null, category, subject, message], (err, result) => {
+  const imagesJson = images && images.length > 0 ? JSON.stringify(images) : null;
+
+  const sql = `INSERT INTO support_tickets (user_id, tracking_number, category, subject, message, images, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')`;
+  db.query(sql, [user_id || null, tracking_number || null, category, subject, message, imagesJson], (err, result) => {
     if (err) return res.status(500).json({ message: 'Database error' });
     res.status(201).json({
       message: 'Support ticket submitted successfully! We will look into it.',
